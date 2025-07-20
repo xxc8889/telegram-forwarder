@@ -1,12 +1,12 @@
 """
-Bot命令处理器 - 简化版，仅用于Web登录验证和基本信息
+Bot命令处理器 - 简化版，仅用于Web登录验证
 """
 
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 from telegram import BotCommand
 
-from .web_auth import WebAuthHandlers
-from ..middleware import admin_required
+from .handlers.web_auth import WebAuthHandlers
+from .middleware import admin_required
 
 
 def setup_handlers(app: Application, settings, database, account_manager, 
@@ -17,14 +17,12 @@ def setup_handlers(app: Application, settings, database, account_manager,
     web_auth_handler = WebAuthHandlers(settings, database)
     
     # 添加命令处理器
-    
-    # 基础命令
     app.add_handler(CommandHandler("start", web_auth_handler.start_command))
     app.add_handler(CommandHandler("help", web_auth_handler.help_command))
     app.add_handler(CommandHandler("web", web_auth_handler.web_command))
     app.add_handler(CommandHandler("status", web_auth_handler.status_command))
     
-    # Web登录验证相关
+    # Web登录验证相关 - 处理所有非命令消息
     app.add_handler(MessageHandler(
         filters.TEXT & ~filters.COMMAND,
         web_auth_handler.handle_message
