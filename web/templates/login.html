@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Telegram Forwarder</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border-color: #475569;
+            --accent-color: #3b82f6;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.3);
+        }
+        
+        .login-container {
+            animation: slideUp 0.8s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .floating-icons {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
+        .floating-icon {
+            position: absolute;
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.1);
+            animation: float 20s infinite linear;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .code-display {
+            font-family: 'Courier New', monospace;
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 0.3em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <!-- 浮动图标背景 -->
+    <div class="floating-icons">
+        <i class="floating-icon fas fa-paper-plane" style="left: 10%; animation-delay: 0s;"></i>
+        <i class="floating-icon fas fa-share" style="left: 20%; animation-delay: 2s;"></i>
+        <i class="floating-icon fas fa-comments" style="left: 30%; animation-delay: 4s;"></i>
+        <i class="floating-icon fas fa-users" style="left: 40%; animation-delay: 6s;"></i>
+        <i class="floating-icon fas fa-cogs" style="left: 50%; animation-delay: 8s;"></i>
+        <i class="floating-icon fas fa-chart-line" style="left: 60%; animation-delay: 10s;"></i>
+        <i class="floating-icon fas fa-shield-alt" style="left: 70%; animation-delay: 12s;"></i>
+        <i class="floating-icon fas fa-robot" style="left: 80%; animation-delay: 14s;"></i>
+        <i class="floating-icon fas fa-rocket" style="left: 90%; animation-delay: 16s;"></i>
+    </div>
+    
+    <!-- 登录卡片 -->
+    <div class="login-container w-full max-w-md">
+        <div class="glass-card p-8">
+            <!-- Logo 和标题 -->
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center pulse-animation">
+                    <i class="fas fa-paper-plane text-white text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-white mb-2">Telegram Forwarder</h1>
+                <p class="text-gray-300">安全的消息搬运管理平台</p>
+            </div>
+            
+            <!-- 登录步骤 -->
+            <div class="space-y-6">
+                <!-- 步骤1: 获取登录码 -->
+                <div id="step1" class="text-center">
+                    <h3 class="text-xl font-semibold text-white mb-4">🔐 安全登录</h3>
+                    <p class="text-gray-300 mb-6">点击下方按钮获取登录码，然后发送给Bot完成验证</p>
+                    
+                    <button id="getCodeBtn" onclick="requestLoginCode()" 
+                            class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                        <i class="fas fa-key mr-2"></i>
+                        获取登录码
+                    </button>
+                </div>
+                
+                <!-- 步骤2: 显示登录码 -->
+                <div id="step2" class="text-center hidden">
+                    <h3 class="text-xl font-semibold text-white mb-4">📱 验证身份</h3>
+                    
+                    <!-- 登录码显示 -->
+                    <div class="bg-black bg-opacity-30 rounded-lg p-6 mb-4">
+                        <p class="text-gray-300 mb-2">您的登录码：</p>
+                        <div id="loginCode" class="code-display">------</div>
+                        <p class="text-sm text-gray-400 mt-2">
+                            <i class="fas fa-clock mr-1"></i>
+                            <span id="countdown">5:00</span> 后过期
+                        </p>
+                    </div>
+                    
+                    <!-- Bot指令 -->
+                    <div class="bg-blue-500 bg-opacity-20 rounded-lg p-4 mb-4">
+                        <p class="text-blue-300 mb-2">
+                            <i class="fas fa-robot mr-2"></i>
+                            请直接发送登录码给Bot：
+                        </p>
+                        <div class="bg-black bg-opacity-50 rounded p-2 font-mono text-xl text-center">
+                            <span id="botCommand" class="text-white font-bold">------</span>
+                        </div>
+                        <p class="text-xs text-blue-200 mt-2">
+                            💡 无需输入命令，直接发送6位数字即可
+                        </p>
+                    </div>
+                    
+                    <!-- 进度指示器 -->
+                    <div class="flex items-center justify-center mb-4">
+                        <div class="spinner mr-3"></div>
+                        <span class="text-gray-300">等待Bot验证...</span>
+                    </div>
+                    
+                    <button onclick="resetLogin()" 
+                            class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-redo mr-2"></i>
+                        重新获取登录码
+                    </button>
+                </div>
+                
+                <!-- 步骤3: 登录成功 -->
+                <div id="step3" class="text-center hidden">
+                    <div class="text-green-400 mb-4">
+                        <i class="fas fa-check-circle text-4xl mb-3"></i>
+                        <h3 class="text-xl font-semibold">验证成功！</h3>
+                        <p class="text-gray-300 mt-2">正在跳转到管理后台...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 帮助信息 -->
+            <div class="mt-8 pt-6 border-t border-gray-600">
+                <div class="text-center">
+                    <p class="text-sm text-gray-400 mb-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        需要帮助？
+                    </p>
+                    <details class="text-left">
+                        <summary class="text-sm text-blue-400 cursor-pointer hover:text-blue-300">
+                            查看登录步骤
+                        </summary>
+                        <div class="mt-3 text-sm text-gray-300 space-y-2">
+                            <p>1. 点击"获取登录码"按钮</p>
+                            <p>2. 复制显示的6位数字登录码</p>
+                            <p>3. 在Telegram中找到您的Bot</p>
+                            <p>4. 直接发送 <code class="bg-gray-700 px-1 rounded">123456</code> (无需命令)</p>
+                            <p>5. 等待页面自动跳转</p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 版权信息 -->
+        <div class="text-center mt-6">
+            <p class="text-sm text-gray-300">
+                <i class="fas fa-copyright mr-1"></i>
+                2025 Telegram Forwarder - 安全可靠的消息管理平台
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        let loginCode = '';
+        let countdownTimer = null;
+        let checkTimer = null;
+        
+        // 请求登录码
+        async function requestLoginCode() {
+            try {
+                document.getElementById('getCodeBtn').disabled = true;
+                document.getElementById('getCodeBtn').innerHTML = '<div class="spinner mr-2"></div>生成中...';
+                
+                const response = await fetch('/api/request-login-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    loginCode = data.login_code;
+                    showStep2(loginCode);
+                    startCountdown(300); // 5分钟
+                    startLoginCheck(loginCode);
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                alert('获取登录码失败: ' + error.message);
+                resetLoginButton();
+            }
+        }
+        
+        // 显示步骤2
+        function showStep2(code) {
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+            document.getElementById('loginCode').textContent = code;
+            document.getElementById('botCommand').textContent = code;
+        }
+        
+        // 显示步骤3
+        function showStep3() {
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.remove('hidden');
+        }
+        
+        // 开始倒计时
+        function startCountdown(seconds) {
+            const countdownElement = document.getElementById('countdown');
+            
+            countdownTimer = setInterval(() => {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                countdownElement.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+                
+                if (seconds <= 0) {
+                    clearInterval(countdownTimer);
+                    alert('登录码已过期，请重新获取');
+                    resetLogin();
+                }
+                
+                seconds--;
+            }, 1000);
+        }
+        
+        // 开始检查登录状态
+        function startLoginCheck(code) {
+            checkTimer = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/check-login/${code}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        clearInterval(checkTimer);
+                        clearInterval(countdownTimer);
+                        showStep3();
+                        
+                        // 2秒后跳转
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 2000);
+                    }
+                } catch (error) {
+                    console.error('检查登录状态失败:', error);
+                }
+            }, 2000); // 每2秒检查一次
+        }
+        
+        // 重置登录
+        function resetLogin() {
+            clearInterval(countdownTimer);
+            clearInterval(checkTimer);
+            
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById('step1').classList.remove('hidden');
+            
+            resetLoginButton();
+        }
+        
+        // 重置登录按钮
+        function resetLoginButton() {
+            const btn = document.getElementById('getCodeBtn');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-key mr-2"></i>获取登录码';
+        }
+        
+        // 页面离开时清理定时器
+        window.addEventListener('beforeunload', () => {
+            clearInterval(countdownTimer);
+            clearInterval(checkTimer);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,842 @@
+<div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                            <div>
+                                <span class="font-medium">智能过滤</span>
+                                <p class="text-sm text-gray-400">使用AI算法过滤垃圾内容</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="smartFilter" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 广告关键词管理 -->
+                <div>
+                    <h4 class="font-medium mb-4">广告关键词管理</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">添加关键词</label>
+                            <div class="flex space-x-2">
+                                <input type="text" id="newKeyword" class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="输入广告关键词">
+                                <button type="button" onclick="addKeyword()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">当前关键词</label>
+                            <div id="keywordsList" class="flex flex-wrap gap-2 p-3 bg-gray-700 rounded-lg min-h-[80px]">
+                                <!-- 动态加载关键词 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 测试过滤器 -->
+                <div>
+                    <h4 class="font-medium mb-4">测试过滤器</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">测试文本</label>
+                            <textarea id="testText" rows="4" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="输入要测试的文本内容..."></textarea>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <button type="button" onclick="testFilters()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                                <i class="fas fa-play mr-2"></i>
+                                测试过滤
+                            </button>
+                        </div>
+                        
+                        <div id="filterResult" class="hidden">
+                            <label class="block text-sm font-medium mb-2">过滤结果</label>
+                            <div class="p-3 bg-gray-700 rounded-lg">
+                                <div id="filterResultContent" class="whitespace-pre-wrap"></div>
+                                <div class="mt-2 text-sm text-gray-400">
+                                    <span>原文长度: <span id="originalLength">0</span></span>
+                                    <span class="ml-4">过滤后: <span id="filteredLength">0</span></span>
+                                    <span class="ml-4">删除: <span id="removedLength">0</span> 字符</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                        <i class="fas fa-save mr-2"></i>
+                        保存过滤器设置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 调度设置 -->
+    <div id="schedule-tab" class="tab-content hidden">
+        <div class="card p-6">
+            <h3 class="text-lg font-semibold mb-6">调度设置</h3>
+            
+            <form id="scheduleForm" class="space-y-6">
+                <!-- 全局调度 -->
+                <div>
+                    <h4 class="font-medium mb-4">全局调度设置</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">健康检查间隔 (分钟)</label>
+                            <input type="number" id="healthCheckInterval" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="5" min="1" max="60">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">配置同步间隔 (分钟)</label>
+                            <input type="number" id="configSyncInterval" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="10" min="1" max="120">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 备份调度 -->
+                <div>
+                    <h4 class="font-medium mb-4">自动备份</h4>
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" id="enableBackup" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                            <label for="enableBackup" class="text-sm font-medium">启用自动备份</label>
+                        </div>
+                        
+                        <div id="backupSettings" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">备份时间</label>
+                                <input type="time" id="backupTime" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="02:00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">保留天数</label>
+                                <input type="number" id="backupRetention" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="7" min="1" max="30">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 清理调度 -->
+                <div>
+                    <h4 class="font-medium mb-4">数据清理</h4>
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" id="enableCleanup" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded">
+                            <label for="enableCleanup" class="text-sm font-medium">启用自动清理</label>
+                        </div>
+                        
+                        <div id="cleanupSettings" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">清理时间</label>
+                                <input type="time" id="cleanupTime" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="03:00">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">数据保留天数</label>
+                                <input type="number" id="dataRetention" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="30" min="1" max="365">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                        <i class="fas fa-save mr-2"></i>
+                        保存调度设置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 安全设置 -->
+    <div id="security-tab" class="tab-content hidden">
+        <div class="card p-6">
+            <h3 class="text-lg font-semibold mb-6">安全设置</h3>
+            
+            <form id="securityForm" class="space-y-6">
+                <!-- 会话加密 -->
+                <div>
+                    <h4 class="font-medium mb-4">会话安全</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                            <div>
+                                <span class="font-medium">会话文件加密</span>
+                                <p class="text-sm text-gray-400">加密存储Telegram会话文件</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="sessionEncryption" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 日志安全 -->
+                <div>
+                    <h4 class="font-medium mb-4">日志安全</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">日志保留天数</label>
+                            <input type="number" id="logRetention" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="30" min="1" max="365">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">日志级别</label>
+                            <select id="logLevel" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="DEBUG">DEBUG</option>
+                                <option value="INFO" selected>INFO</option>
+                                <option value="WARNING">WARNING</option>
+                                <option value="ERROR">ERROR</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Web安全 -->
+                <div>
+                    <h4 class="font-medium mb-4">Web管理安全</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">会话超时 (分钟)</label>
+                            <input type="number" id="sessionTimeout" class="w-full md:w-48 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="60" min="5" max="480">
+                            <p class="text-sm text-gray-400 mt-1">Web登录会话的有效时间</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">登录码有效期 (分钟)</label>
+                            <input type="number" id="loginCodeExpiry" class="w-full md:w-48 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="5" min="1" max="30">
+                            <p class="text-sm text-gray-400 mt-1">Bot生成的登录码有效时间</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 监控告警 -->
+                <div>
+                    <h4 class="font-medium mb-4">监控告警</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                            <div>
+                                <span class="font-medium">错误时告警</span>
+                                <p class="text-sm text-gray-400">系统出现错误时通过Bot发送通知</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="alertOnError" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                            <div>
+                                <span class="font-medium">性能监控</span>
+                                <p class="text-sm text-gray-400">监控系统性能并在异常时告警</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="performanceMonitoring" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 密钥管理 -->
+                <div>
+                    <h4 class="font-medium mb-4">密钥管理</h4>
+                    <div class="space-y-4">
+                        <div class="bg-yellow-500 bg-opacity-20 border border-yellow-500 border-opacity-50 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <i class="fas fa-exclamation-triangle text-yellow-400 mt-1 mr-3"></i>
+                                <div class="text-sm">
+                                    <p class="text-yellow-300 font-medium mb-1">加密密钥管理</p>
+                                    <p class="text-yellow-200">当前使用的加密密钥用于保护敏感数据。更改密钥将导致现有加密数据无法解密！</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">当前加密密钥状态</label>
+                            <div class="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg">
+                                <i class="fas fa-key text-green-400"></i>
+                                <span class="text-sm">密钥已设置并正常工作</span>
+                                <button type="button" onclick="regenerateKey()" class="ml-auto text-yellow-400 hover:text-yellow-300 text-sm">
+                                    <i class="fas fa-sync-alt mr-1"></i>
+                                    重新生成
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                        <i class="fas fa-save mr-2"></i>
+                        保存安全设置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 系统信息 -->
+    <div class="card p-6">
+        <h3 class="text-lg font-semibold mb-6">系统信息</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="font-medium mb-3">软件版本</h4>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">程序版本:</span>
+                        <span>v1.0.0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">Python版本:</span>
+                        <span id="pythonVersion">3.9.0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">数据库版本:</span>
+                        <span id="databaseVersion">SQLite 3.36.0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h4 class="font-medium mb-3">运行状态</h4>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">启动时间:</span>
+                        <span id="startTime">2025-01-21 10:30:00</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">运行时长:</span>
+                        <span id="uptime">2小时30分钟</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-400">配置文件:</span>
+                        <span class="text-green-400">正常</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-700">
+            <button onclick="exportConfig()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-download mr-2"></i>
+                导出配置
+            </button>
+            <button onclick="restartSystem()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-restart mr-2"></i>
+                重启系统
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 当前关键词列表
+let currentKeywords = ['广告', '推广', '代理', '加微信', '免费领取', '限时优惠'];
+
+// 切换标签页
+function showTab(tabName) {
+    // 隐藏所有标签内容
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.add('hidden');
+    });
+    
+    // 移除所有按钮的活跃状态
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-500', 'text-white');
+        btn.classList.add('text-gray-400');
+    });
+    
+    // 显示选中的标签内容
+    document.getElementById(tabName + '-tab').classList.remove('hidden');
+    
+    // 激活选中的按钮
+    const activeBtn = document.getElementById('tab-' + tabName);
+    activeBtn.classList.add('active', 'bg-blue-500', 'text-white');
+    activeBtn.classList.remove('text-gray-400');
+}
+
+// 加载设置
+async function loadSettings() {
+    try {
+        const settings = await apiRequest('/api/settings');
+        
+        // 基本设置
+        document.getElementById('minInterval').value = settings.min_interval || 3;
+        document.getElementById('maxInterval').value = settings.max_interval || 30;
+        document.getElementById('hourlyLimit').value = settings.hourly_limit || 50;
+        document.getElementById('retryAttempts').value = settings.retry_attempts || 3;
+        document.getElementById('mediaTimeout').value = settings.media_timeout || 300;
+        
+        // 轮换策略
+        const rotationStrategy = settings.rotation_strategy || 'message';
+        document.getElementById('rotation-' + rotationStrategy).checked = true;
+        
+        // 过滤器设置
+        document.getElementById('removeLinks').checked = settings.remove_links || false;
+        document.getElementById('removeEmojis').checked = settings.remove_emojis || false;
+        document.getElementById('removeSpecialChars').checked = settings.remove_special_chars || false;
+        document.getElementById('adDetection').checked = settings.ad_detection || false;
+        document.getElementById('smartFilter').checked = settings.smart_filter || false;
+        
+        // 安全设置
+        document.getElementById('sessionEncryption').checked = settings.session_encryption !== false;
+        document.getElementById('logRetention').value = settings.log_retention_days || 30;
+        document.getElementById('logLevel').value = settings.log_level || 'INFO';
+        document.getElementById('sessionTimeout').value = settings.session_timeout || 60;
+        document.getElementById('loginCodeExpiry').value = settings.login_code_expiry || 5;
+        document.getElementById('alertOnError').checked = settings.alert_on_error !== false;
+        document.getElementById('performanceMonitoring').checked = settings.performance_monitoring !== false;
+        
+        // 调度设置
+        document.getElementById('enableBackup').checked = settings.backup_enabled !== false;
+        document.getElementById('backupTime').value = settings.backup_time || '02:00';
+        document.getElementById('backupRetention').value = settings.backup_retention || 7;
+        document.getElementById('enableCleanup').checked = settings.cleanup_enabled !== false;
+        document.getElementById('cleanupTime').value = settings.cleanup_time || '03:00';
+        document.getElementById('dataRetention').value = settings.data_retention || 30;
+        
+        // 加载关键词
+        if (settings.ad_keywords) {
+            currentKeywords = settings.ad_keywords;
+        }
+        updateKeywordsList();
+        
+    } catch (error) {
+        showNotification('加载设置失败: ' + error.message, 'error');
+    }
+}
+
+// 更新关键词列表显示
+function updateKeywordsList() {
+    const container = document.getElementById('keywordsList');
+    
+    if (currentKeywords.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-sm">暂无关键词</p>';
+        return;
+    }
+    
+    container.innerHTML = currentKeywords.map((keyword, index) => `
+        <span class="inline-flex items-center px-3 py-1 bg-blue-500 bg-opacity-20 text-blue-400 text-sm rounded-full">
+            ${keyword}
+            <button onclick="removeKeyword(${index})" class="ml-2 text-blue-300 hover:text-red-400">
+                <i class="fas fa-times text-xs"></i>
+            </button>
+        </span>
+    `).join('');
+}
+
+// 添加关键词
+function addKeyword() {
+    const input = document.getElementById('newKeyword');
+    const keyword = input.value.trim();
+    
+    if (!keyword) {
+        showNotification('请输入关键词', 'error');
+        return;
+    }
+    
+    if (currentKeywords.includes(keyword)) {
+        showNotification('关键词已存在', 'error');
+        return;
+    }
+    
+    currentKeywords.push(keyword);
+    input.value = '';
+    updateKeywordsList();
+    showNotification('关键词添加成功', 'success');
+}
+
+// 删除关键词
+function removeKeyword(index) {
+    currentKeywords.splice(index, 1);
+    updateKeywordsList();
+    showNotification('关键词删除成功', 'success');
+}
+
+// 测试过滤器
+async function testFilters() {
+    const testText = document.getElementById('testText').value.trim();
+    
+    if (!testText) {
+        showNotification('请输入测试文本', 'error');
+        return;
+    }
+    
+    try {
+        const filters = {
+            remove_links: document.getElementById('removeLinks').checked,
+            remove_emojis: document.getElementById('removeEmojis').checked,
+            remove_special_chars: document.getElementById('removeSpecialChars').checked,
+            ad_detection: document.getElementById('adDetection').checked,
+            smart_filter: document.getElementById('smartFilter').checked,
+            ad_keywords: currentKeywords
+        };
+        
+        const result = await apiRequest('/api/test-filter', {
+            method: 'POST',
+            body: JSON.stringify({
+                text: testText,
+                filters: filters
+            })
+        });
+        
+        // 显示结果
+        document.getElementById('filterResultContent').textContent = result.filtered || '';
+        document.getElementById('originalLength').textContent = testText.length;
+        document.getElementById('filteredLength').textContent = (result.filtered || '').length;
+        document.getElementById('removedLength').textContent = testText.length - (result.filtered || '').length;
+        
+        document.getElementById('filterResult').classList.remove('hidden');
+        
+    } catch (error) {
+        showNotification('测试过滤器失败: ' + error.message, 'error');
+    }
+}
+
+// 重新生成密钥
+function regenerateKey() {
+    if (!confirm('重新生成密钥将导致现有加密数据无法解密！确定要继续吗？')) {
+        return;
+    }
+    
+    showNotification('此功能需要重启系统才能生效', 'warning');
+}
+
+// 导出配置
+function exportConfig() {
+    // 创建配置数据
+    const config = {
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+        settings: {
+            // 收集当前表单数据
+        }
+    };
+    
+    // 创建下载链接
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `telegram-forwarder-config-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification('配置导出成功', 'success');
+}
+
+// 重启系统
+function restartSystem() {
+    if (!confirm('确定要重启系统吗？这将中断所有正在进行的任务！')) {
+        return;
+    }
+    
+    showNotification('重启功能将在未来版本中实现', 'info');
+}
+
+// 表单提交处理
+document.getElementById('generalForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        min_interval: parseInt(document.getElementById('minInterval').value),
+        max_interval: parseInt(document.getElementById('maxInterval').value),
+        hourly_limit: parseInt(document.getElementById('hourlyLimit').value),
+        retry_attempts: parseInt(document.getElementById('retryAttempts').value),
+        media_timeout: parseInt(document.getElementById('mediaTimeout').value),
+        rotation_strategy: document.querySelector('input[name="rotationStrategy"]:checked').value
+    };
+    
+    try {
+        await apiRequest('/api/settings/general', {
+            method: 'PUT',
+            body: JSON.stringify(formData)
+        });
+        
+        showNotification('基本设置保存成功', 'success');
+    } catch (error) {
+        showNotification('保存失败: ' + error.message, 'error');
+    }
+});
+
+document.getElementById('filterForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        remove_links: document.getElementById('removeLinks').checked,
+        remove_emojis: document.getElementById('removeEmojis').checked,
+        remove_special_chars: document.getElementById('removeSpecialChars').checked,
+        ad_detection: document.getElementById('adDetection').checked,
+        smart_filter: document.getElementById('smartFilter').checked,
+        ad_keywords: currentKeywords
+    };
+    
+    try {
+        await apiRequest('/api/settings/filters', {
+            method: 'PUT',
+            body: JSON.stringify(formData)
+        });
+        
+        showNotification('过滤器设置保存成功', 'success');
+    } catch (error) {
+        showNotification('保存失败: ' + error.message, 'error');
+    }
+});
+
+document.getElementById('scheduleForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        health_check_interval: parseInt(document.getElementById('healthCheckInterval').value),
+        config_sync_interval: parseInt(document.getElementById('configSyncInterval').value),
+        backup_enabled: document.getElementById('enableBackup').checked,
+        backup_time: document.getElementById('backupTime').value,
+        backup_retention: parseInt(document.getElementById('backupRetention').value),
+        cleanup_enabled: document.getElementById('enableCleanup').checked,
+        cleanup_time: document.getElementById('cleanupTime').value,
+        data_retention: parseInt(document.getElementById('dataRetention').value)
+    };
+    
+    try {
+        await apiRequest('/api/settings/schedule', {
+            method: 'PUT',
+            body: JSON.stringify(formData)
+        });
+        
+        showNotification('调度设置保存成功', 'success');
+    } catch (error) {
+        showNotification('保存失败: ' + error.message, 'error');
+    }
+});
+
+document.getElementById('securityForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        session_encryption: document.getElementById('sessionEncryption').checked,
+        log_retention_days: parseInt(document.getElementById('logRetention').value),
+        log_level: document.getElementById('logLevel').value,
+        session_timeout: parseInt(document.getElementById('sessionTimeout').value),
+        login_code_expiry: parseInt(document.getElementById('loginCodeExpiry').value),
+        alert_on_error: document.getElementById('alertOnError').checked,
+        performance_monitoring: document.getElementById('performanceMonitoring').checked
+    };
+    
+    try {
+        await apiRequest('/api/settings/security', {
+            method: 'PUT',
+            body: JSON.stringify(formData)
+        });
+        
+        showNotification('安全设置保存成功', 'success');
+    } catch (error) {
+        showNotification('保存失败: ' + error.message, 'error');
+    }
+});
+
+// 回车键添加关键词
+document.getElementById('newKeyword').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addKeyword();
+    }
+});
+
+// 页面加载完成后执行
+document.addEventListener('DOMContentLoaded', function() {
+    loadSettings();
+    
+    // 备份设置显示/隐藏
+    document.getElementById('enableBackup').addEventListener('change', function() {
+        const settings = document.getElementById('backupSettings');
+        if (this.checked) {
+            settings.classList.remove('opacity-50');
+            settings.querySelectorAll('input').forEach(input => input.disabled = false);
+        } else {
+            settings.classList.add('opacity-50');
+            settings.querySelectorAll('input').forEach(input => input.disabled = true);
+        }
+    });
+    
+    // 清理设置显示/隐藏
+    document.getElementById('enableCleanup').addEventListener('change', function() {
+        const settings = document.getElementById('cleanupSettings');
+        if (this.checked) {
+            settings.classList.remove('opacity-50');
+            settings.querySelectorAll('input').forEach(input => input.disabled = false);
+        } else {
+            settings.classList.add('opacity-50');
+            settings.querySelectorAll('input').forEach(input => input.disabled = true);
+        }
+    });
+});
+</script>
+{% endblock %}{% extends "base.html" %}
+
+{% block title %}系统设置 - Telegram Forwarder{% endblock %}
+
+{% block page_title %}系统设置{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- 设置导航 -->
+    <div class="flex space-x-1 bg-gray-700 p-1 rounded-lg">
+        <button onclick="showTab('general')" id="tab-general" class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors tab-button active">
+            <i class="fas fa-cog mr-2"></i>
+            基本设置
+        </button>
+        <button onclick="showTab('filter')" id="tab-filter" class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors tab-button">
+            <i class="fas fa-filter mr-2"></i>
+            过滤器
+        </button>
+        <button onclick="showTab('schedule')" id="tab-schedule" class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors tab-button">
+            <i class="fas fa-clock mr-2"></i>
+            调度设置
+        </button>
+        <button onclick="showTab('security')" id="tab-security" class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors tab-button">
+            <i class="fas fa-shield-alt mr-2"></i>
+            安全设置
+        </button>
+    </div>
+
+    <!-- 基本设置 -->
+    <div id="general-tab" class="tab-content">
+        <div class="card p-6">
+            <h3 class="text-lg font-semibold mb-6">基本设置</h3>
+            
+            <form id="generalForm" class="space-y-6">
+                <!-- 发送频率 -->
+                <div>
+                    <h4 class="font-medium mb-4">发送频率控制</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">最小间隔 (秒)</label>
+                            <input type="number" id="minInterval" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="3" min="1" max="300">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">最大间隔 (秒)</label>
+                            <input type="number" id="maxInterval" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="30" min="1" max="600">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">每小时限制</label>
+                            <input type="number" id="hourlyLimit" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="50" min="1" max="1000">
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-400 mt-2">发送间隔将在最小值和最大值之间随机选择</p>
+                </div>
+
+                <!-- 轮换策略 -->
+                <div>
+                    <h4 class="font-medium mb-4">账号轮换策略</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-3">
+                            <input type="radio" id="rotation-message" name="rotationStrategy" value="message" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600">
+                            <label for="rotation-message" class="text-sm">
+                                <span class="font-medium">消息轮换</span>
+                                <span class="text-gray-400 block">每条消息使用不同账号</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <input type="radio" id="rotation-time" name="rotationStrategy" value="time" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600">
+                            <label for="rotation-time" class="text-sm">
+                                <span class="font-medium">时间轮换</span>
+                                <span class="text-gray-400 block">按时间间隔轮换账号</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <input type="radio" id="rotation-smart" name="rotationStrategy" value="smart" class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600">
+                            <label for="rotation-smart" class="text-sm">
+                                <span class="font-medium">智能轮换</span>
+                                <span class="text-gray-400 block">结合消息数量和时间智能轮换</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 重试设置 -->
+                <div>
+                    <h4 class="font-medium mb-4">重试设置</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">重试次数</label>
+                            <input type="number" id="retryAttempts" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="3" min="0" max="10">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">媒体超时 (秒)</label>
+                            <input type="number" id="mediaTimeout" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500" value="300" min="30" max="3600">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                        <i class="fas fa-save mr-2"></i>
+                        保存设置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 过滤器设置 -->
+    <div id="filter-tab" class="tab-content hidden">
+        <div class="card p-6">
+            <h3 class="text-lg font-semibold mb-6">过滤器设置</h3>
+            
+            <form id="filterForm" class="space-y-6">
+                <!-- 全局过滤器 -->
+                <div>
+                    <h4 class="font-medium mb-4">全局过滤器</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                            <div>
+                                <span class="font-medium">删除链接</span>
+                                <p class="text-sm text-gray-400">移除消息中的所有链接和@提及</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="removeLinks" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                            <div>
+                                <span class="font-medium">删除表情符号</span>
+                                <p class="text-sm text-gray-400">移除消息中的emoji表情（保留#号）</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="removeEmojis" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                            <div>
+                                <span class="font-medium">删除特殊符号</span>
+                                <p class="text-sm text-gray-400">移除消息中的特殊符号（保留#号）</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="removeSpecialChars" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                            <div>
+                                <span class="font-medium">广告检测</span>
+                                <p class="text-sm text-gray-400">自动检测并过滤广告内容</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="adDetection" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer

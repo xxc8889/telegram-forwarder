@@ -1,0 +1,678 @@
+{% extends "base.html" %}
+
+{% block title %}账号管理 - Telegram Forwarder{% endblock %}
+
+{% block page_title %}账号管理{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- 顶部统计 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-400">总账号数</p>
+                    <p class="text-2xl font-bold" id="total-accounts">0</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-blue-500 bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-users text-blue-500 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-400">活跃账号</p>
+                    <p class="text-2xl font-bold text-green-400" id="active-accounts">0</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-green-500 bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-400">错误账号</p>
+                    <p class="text-2xl font-bold text-red-400" id="error-accounts">0</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-red-500 bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-exclamation-triangle text-red-500 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作栏 -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h2 class="text-xl font-semibold">监听账号</h2>
+            <p class="text-gray-400 text-sm mt-1">管理用于监听消息的Telegram账号</p>
+        </div>
+        <div class="mt-4 sm:mt-0 flex space-x-3">
+            <button onclick="openApiModal()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm">
+                <i class="fas fa-key mr-2"></i>
+                API管理
+            </button>
+            <button onclick="openAddAccountModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">
+                <i class="fas fa-plus mr-2"></i>
+                添加账号
+            </button>
+        </div>
+    </div>
+
+    <!-- 账号列表 -->
+    <div class="card">
+        <div class="p-6 border-b border-gray-700">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold">账号列表</h3>
+                <button onclick="refreshAccounts()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-700 bg-opacity-50">
+                    <tr>
+                        <th class="text-left py-3 px-6">账号信息</th>
+                        <th class="text-left py-3 px-6">状态</th>
+                        <th class="text-left py-3 px-6">API分配</th>
+                        <th class="text-left py-3 px-6">最后活跃</th>
+                        <th class="text-left py-3 px-6">统计</th>
+                        <th class="text-left py-3 px-6">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="accounts-table">
+                    <!-- 动态加载 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 空状态 -->
+        <div id="accounts-empty" class="text-center py-12 hidden">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-700 flex items-center justify-center">
+                <i class="fas fa-user-plus text-gray-400 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">暂无监听账号</h3>
+            <p class="text-gray-400 mb-4">添加Telegram账号开始监听消息</p>
+            <button onclick="openAddAccountModal()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg">
+                <i class="fas fa-plus mr-2"></i>
+                添加账号
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 添加账号模态框 -->
+<div id="addAccountModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-gray-800 rounded-lg w-full max-w-md">
+        <div class="p-6 border-b border-gray-700">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-semibold">添加监听账号</h3>
+                <button onclick="closeAddAccountModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            <div class="space-y-4">
+                <div class="bg-blue-500 bg-opacity-20 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <i class="fas fa-info-circle text-blue-400 mt-1 mr-3"></i>
+                        <div class="text-sm">
+                            <p class="text-blue-300 font-medium mb-1">添加说明</p>
+                            <p class="text-blue-200">请在Bot中发送手机号码来添加监听账号，Bot会自动处理登录流程</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <h4 class="font-medium mb-2">
+                        <i class="fas fa-robot mr-2"></i>
+                        Bot命令示例
+                    </h4>
+                    <div class="bg-black bg-opacity-50 rounded p-3 font-mono text-sm">
+                        <span class="text-blue-400">/add_listener</span> <span class="text-green-400">+8613800138000</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2">请将手机号替换为您的真实号码</p>
+                </div>
+                
+                <div class="space-y-2">
+                    <h5 class="font-medium text-sm">添加步骤：</h5>
+                    <ol class="text-sm text-gray-300 space-y-1 ml-4">
+                        <li>1. 在Bot中发送 <code class="bg-gray-600 px-1 rounded">/add_listener +手机号</code></li>
+                        <li>2. 输入收到的验证码</li>
+                        <li>3. 如需要，输入两步验证密码</li>
+                        <li>4. 账号添加完成，自动分配API</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="flex justify-end pt-4 border-t border-gray-700 mt-6">
+                <button onclick="closeAddAccountModal()" class="px-4 py-2 text-gray-400 hover:text-white border border-gray-600 rounded-lg hover:border-gray-500">
+                    知道了
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API管理模态框 -->
+<div id="apiModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-gray-800 rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-gray-700">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-semibold">API池管理</h3>
+                <button onclick="closeApiModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            <!-- API统计 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-400" id="total-apis">0</div>
+                        <div class="text-sm text-gray-400">总API数</div>
+                    </div>
+                </div>
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-400" id="available-slots">0</div>
+                        <div class="text-sm text-gray-400">可用槽位</div>
+                    </div>
+                </div>
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-yellow-400" id="usage-rate">0%</div>
+                        <div class="text-sm text-gray-400">使用率</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 添加API表单 -->
+            <div class="bg-gray-700 rounded-lg p-4 mb-6">
+                <h4 class="font-semibold mb-4">添加新API</h4>
+                <form id="apiForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">APP ID</label>
+                            <input type="text" id="appId" class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="从 my.telegram.org 获取" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">APP Hash</label>
+                            <input type="text" id="appHash" class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="从 my.telegram.org 获取" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">最大账号数</label>
+                        <input type="number" id="maxAccounts" class="w-32 px-3 py-2 bg-gray-600 border border-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500" value="1" min="1" max="10">
+                        <p class="text-xs text-gray-400 mt-1">建议1-3个账号共享一个API</p>
+                    </div>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-plus mr-2"></i>
+                        添加API
+                    </button>
+                </form>
+            </div>
+
+            <!-- API列表 -->
+            <div>
+                <h4 class="font-semibold mb-4">API列表</h4>
+                <div class="space-y-3" id="api-list">
+                    <!-- 动态加载 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 账号详情模态框 -->
+<div id="accountDetailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-gray-800 rounded-lg w-full max-w-2xl">
+        <div class="p-6 border-b border-gray-700">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-semibold">账号详情</h3>
+                <button onclick="closeAccountDetailModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-6" id="account-detail-content">
+            <!-- 动态加载账号详情 -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 全局变量
+let currentAccountPhone = null;
+
+// 加载账号列表
+async function loadAccounts() {
+    try {
+        const data = await apiRequest('/api/accounts');
+        const table = document.getElementById('accounts-table');
+        const emptyState = document.getElementById('accounts-empty');
+        
+        if (data.length === 0) {
+            table.innerHTML = '';
+            emptyState.classList.remove('hidden');
+        } else {
+            emptyState.classList.add('hidden');
+            
+            table.innerHTML = data.map(account => `
+                <tr class="border-b border-gray-700 hover:bg-gray-700 hover:bg-opacity-30">
+                    <td class="py-4 px-6">
+                        <div class="flex items-center">
+                            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center mr-3">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div>
+                                <div class="font-medium">${account.phone}</div>
+                                <div class="text-sm text-gray-400">${account.username ? '@' + account.username : 'ID: ' + (account.user_id || '未知')}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="px-2 py-1 rounded-full text-xs ${getStatusClass(account.status)}">
+                            <span class="status-dot ${getStatusDotClass(account.status)}"></span>
+                            ${getStatusText(account.status)}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="text-sm">
+                            <div>API: ${account.api_id || '未分配'}</div>
+                            <div class="text-gray-400">容量: ${account.api_usage || '0/0'}</div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="text-sm">
+                            <div>${account.last_active || '从未'}</div>
+                            <div class="text-gray-400">错误: ${account.error_count || 0}次</div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="text-sm">
+                            <div>消息: ${account.messages_sent || 0}</div>
+                            <div class="text-gray-400">今日: ${account.today_messages || 0}</div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex space-x-2">
+                            <button onclick="viewAccount('${account.phone}')" class="text-blue-400 hover:text-blue-300">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            ${account.status === 'error' ? `
+                                <button onclick="reconnectAccount('${account.phone}')" class="text-green-400 hover:text-green-300" title="重连">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            ` : ''}
+                            <button onclick="removeAccount('${account.phone}')" class="text-red-400 hover:text-red-300" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // 更新统计
+        updateAccountStats(data);
+    } catch (error) {
+        showNotification('加载账号列表失败: ' + error.message, 'error');
+    }
+}
+
+// 更新账号统计
+function updateAccountStats(accounts) {
+    const total = accounts.length;
+    const active = accounts.filter(a => a.status === 'active').length;
+    const error = accounts.filter(a => a.status === 'error').length;
+    
+    document.getElementById('total-accounts').textContent = total;
+    document.getElementById('active-accounts').textContent = active;
+    document.getElementById('error-accounts').textContent = error;
+}
+
+// 获取状态样式类
+function getStatusClass(status) {
+    const classes = {
+        'active': 'bg-green-500 bg-opacity-20 text-green-400',
+        'error': 'bg-red-500 bg-opacity-20 text-red-400',
+        'offline': 'bg-gray-500 bg-opacity-20 text-gray-400',
+        'unauthorized': 'bg-yellow-500 bg-opacity-20 text-yellow-400'
+    };
+    return classes[status] || 'bg-gray-500 bg-opacity-20 text-gray-400';
+}
+
+function getStatusDotClass(status) {
+    const classes = {
+        'active': 'status-online',
+        'error': 'status-offline',
+        'offline': 'status-offline',
+        'unauthorized': 'status-warning'
+    };
+    return classes[status] || 'status-offline';
+}
+
+function getStatusText(status) {
+    const texts = {
+        'active': '在线',
+        'error': '错误',
+        'offline': '离线',
+        'unauthorized': '未授权'
+    };
+    return texts[status] || '未知';
+}
+
+// 打开添加账号模态框
+function openAddAccountModal() {
+    document.getElementById('addAccountModal').classList.remove('hidden');
+}
+
+// 关闭添加账号模态框
+function closeAddAccountModal() {
+    document.getElementById('addAccountModal').classList.add('hidden');
+}
+
+// 查看账号详情
+async function viewAccount(phone) {
+    currentAccountPhone = phone;
+    
+    try {
+        const account = await apiRequest(`/api/accounts/${encodeURIComponent(phone)}`);
+        
+        const content = `
+            <div class="space-y-6">
+                <!-- 基本信息 -->
+                <div>
+                    <h4 class="font-semibold mb-4">基本信息</h4>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="text-gray-400">手机号:</span>
+                            <span class="ml-2">${account.phone}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">用户名:</span>
+                            <span class="ml-2">${account.username ? '@' + account.username : '未设置'}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">用户ID:</span>
+                            <span class="ml-2">${account.user_id || '未知'}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">状态:</span>
+                            <span class="ml-2 px-2 py-1 rounded text-xs ${getStatusClass(account.status)}">
+                                ${getStatusText(account.status)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API信息 -->
+                <div>
+                    <h4 class="font-semibold mb-4">API分配</h4>
+                    <div class="bg-gray-700 rounded-lg p-4">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-400">API ID:</span>
+                                <span class="ml-2">${account.api_id || '未分配'}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">共享账号:</span>
+                                <span class="ml-2">${account.api_usage || '0/0'}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 活动统计 -->
+                <div>
+                    <h4 class="font-semibold mb-4">活动统计</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-700 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-blue-400">${account.messages_sent || 0}</div>
+                            <div class="text-sm text-gray-400">总消息数</div>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-green-400">${account.today_messages || 0}</div>
+                            <div class="text-sm text-gray-400">今日消息</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 连接信息 -->
+                <div>
+                    <h4 class="font-semibold mb-4">连接信息</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">最后活跃:</span>
+                            <span>${account.last_active || '从未'}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">错误次数:</span>
+                            <span class="${account.error_count > 0 ? 'text-red-400' : ''}">${account.error_count || 0}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">创建时间:</span>
+                            <span>${account.created_at || '未知'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-700">
+                    ${account.status === 'error' ? `
+                        <button onclick="reconnectAccount('${account.phone}')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg">
+                            <i class="fas fa-sync-alt mr-2"></i>
+                            重新连接
+                        </button>
+                    ` : ''}
+                    <button onclick="removeAccount('${account.phone}')" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg">
+                        <i class="fas fa-trash mr-2"></i>
+                        删除账号
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('account-detail-content').innerHTML = content;
+        document.getElementById('accountDetailModal').classList.remove('hidden');
+    } catch (error) {
+        showNotification('加载账号详情失败: ' + error.message, 'error');
+    }
+}
+
+// 关闭账号详情模态框
+function closeAccountDetailModal() {
+    document.getElementById('accountDetailModal').classList.add('hidden');
+    currentAccountPhone = null;
+}
+
+// 重连账号
+async function reconnectAccount(phone) {
+    try {
+        await apiRequest(`/api/accounts/${encodeURIComponent(phone)}/reconnect`, {
+            method: 'POST'
+        });
+        
+        showNotification('重连请求已发送', 'success');
+        loadAccounts();
+        closeAccountDetailModal();
+    } catch (error) {
+        showNotification('重连失败: ' + error.message, 'error');
+    }
+}
+
+// 删除账号
+async function removeAccount(phone) {
+    if (!confirm('确定要删除这个账号吗？此操作不可恢复！')) return;
+    
+    try {
+        await apiRequest(`/api/accounts/${encodeURIComponent(phone)}`, {
+            method: 'DELETE'
+        });
+        
+        showNotification('账号删除成功', 'success');
+        loadAccounts();
+        closeAccountDetailModal();
+    } catch (error) {
+        showNotification('删除账号失败: ' + error.message, 'error');
+    }
+}
+
+// 刷新账号列表
+function refreshAccounts() {
+    loadAccounts();
+    showNotification('账号列表已刷新', 'success');
+}
+
+// 打开API管理模态框
+async function openApiModal() {
+    try {
+        await loadApiList();
+        document.getElementById('apiModal').classList.remove('hidden');
+    } catch (error) {
+        showNotification('加载API信息失败: ' + error.message, 'error');
+    }
+}
+
+// 关闭API管理模态框
+function closeApiModal() {
+    document.getElementById('apiModal').classList.add('hidden');
+}
+
+// 加载API列表
+async function loadApiList() {
+    try {
+        const data = await apiRequest('/api/api-pool');
+        
+        // 更新统计
+        document.getElementById('total-apis').textContent = data.total_apis || 0;
+        document.getElementById('available-slots').textContent = data.available || 0;
+        document.getElementById('usage-rate').textContent = (data.usage_rate || 0) + '%';
+        
+        // 更新API列表
+        const container = document.getElementById('api-list');
+        
+        if (data.apis && data.apis.length > 0) {
+            container.innerHTML = data.apis.map(api => `
+                <div class="bg-gray-700 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h5 class="font-medium">API ${api.app_id}</h5>
+                            <p class="text-sm text-gray-400">容量: ${api.current_accounts}/${api.max_accounts}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2 py-1 rounded text-xs ${api.current_accounts >= api.max_accounts ? 'bg-red-500 bg-opacity-20 text-red-400' : 'bg-green-500 bg-opacity-20 text-green-400'}">
+                                ${api.current_accounts >= api.max_accounts ? '已满' : '可用'}
+                            </span>
+                            <button onclick="removeApi('${api.app_id}')" class="text-red-400 hover:text-red-300">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 进度条 -->
+                    <div class="w-full bg-gray-600 rounded-full h-2 mb-3">
+                        <div class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: ${(api.current_accounts / api.max_accounts * 100)}%"></div>
+                    </div>
+                    
+                    <!-- 分配的账号 -->
+                    ${api.assigned_accounts && api.assigned_accounts.length > 0 ? `
+                        <div>
+                            <p class="text-xs text-gray-400 mb-2">分配账号:</p>
+                            <div class="flex flex-wrap gap-1">
+                                ${api.assigned_accounts.map(phone => `
+                                    <span class="px-2 py-1 bg-blue-500 bg-opacity-20 text-blue-400 text-xs rounded">
+                                        ${phone}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : '<p class="text-xs text-gray-400">暂无分配账号</p>'}
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = `
+                <div class="text-center py-8 text-gray-400">
+                    <i class="fas fa-key text-3xl mb-3"></i>
+                    <p>暂无API配置</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        showNotification('加载API列表失败: ' + error.message, 'error');
+    }
+}
+
+// 添加API
+document.getElementById('apiForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const appId = document.getElementById('appId').value.trim();
+    const appHash = document.getElementById('appHash').value.trim();
+    const maxAccounts = parseInt(document.getElementById('maxAccounts').value);
+    
+    if (!appId || !appHash) {
+        showNotification('请填写完整的API信息', 'error');
+        return;
+    }
+    
+    try {
+        await apiRequest('/api/api-pool', {
+            method: 'POST',
+            body: JSON.stringify({
+                app_id: appId,
+                app_hash: appHash,
+                max_accounts: maxAccounts
+            })
+        });
+        
+        showNotification('API添加成功', 'success');
+        this.reset();
+        loadApiList();
+    } catch (error) {
+        showNotification('添加API失败: ' + error.message, 'error');
+    }
+});
+
+// 删除API
+async function removeApi(appId) {
+    if (!confirm('确定要删除这个API吗？已分配的账号将需要重新分配！')) return;
+    
+    try {
+        await apiRequest(`/api/api-pool/${appId}`, {
+            method: 'DELETE'
+        });
+        
+        showNotification('API删除成功', 'success');
+        loadApiList();
+        loadAccounts(); // 重新加载账号列表
+    } catch (error) {
+        showNotification('删除API失败: ' + error.message, 'error');
+    }
+}
+
+// 页面加载完成后执行
+document.addEventListener('DOMContentLoaded', function() {
+    loadAccounts();
+    
+    // 定期刷新账号状态
+    setInterval(() => {
+        loadAccounts();
+    }, 30000); // 30秒刷新一次
+});
+</script>
+{% endblock %}

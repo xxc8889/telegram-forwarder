@@ -1,0 +1,29 @@
+# Telegram Bot配置
+BOT_TOKEN=your_bot_token_here
+
+# 管理员用户ID (用逗号分隔多个用户)
+ADMIN_USERS=123456789,987654321
+
+# 加密密钥 (32字节，用于保护敏感数据)
+ENCRYPTION_KEY=your_32_byte_encryption_key_here
+
+# 数据库配置
+DATABASE_URL=sqlite:///data/forwarder.db
+
+# 日志配置
+LOG_LEVEL=INFO
+LOG_FILE=logs/forwarder.log
+
+# Web界面配置
+WEB_HOST=0.0.0.0
+WEB_PORT=8080
+WEB_DEBUG=False
+WEB_SECRET_KEY=your_web_secret_key_here
+
+# 全局设置
+MIN_INTERVAL=3
+MAX_INTERVAL=30
+HOURLY_LIMIT=50
+
+# 备份设置
+BACKUP_ENABLED=True

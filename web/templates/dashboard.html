@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}仪表板 - Telegram Forwarder{% endblock %}
+
+{% block page_title %}仪表板{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- 状态卡片 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- 系统状态 -->
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-400">系统状态</p>
+                    <p class="text-2xl font-bold" id="system-status">运行中</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-green-500 bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-server text-green-500 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm">
+                <span class="status-dot status-online"></span>
+                <span class="text-gray-400">运行时间: <span id="uptime">2小时30分钟</span></span>
+            </div>
+        </div>
+
+        <!-- 活跃账号 -->
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-400">活跃账号</p>
+                    <p class="text-2xl font-bold" id="active-accounts">2</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-blue-500 bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-users text-blue-500 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 text-sm text-gray-400">
+                总账号: <span id="total-accounts">2</span> 个
+            </div>
+        </div>
+
+        <!-- 搬运组 -->
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-400">搬运组</p>
+                    <p class="text-2xl font-bold" id="active-groups">1</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-purple-500 bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-layer-group text-purple-500 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 text-sm text-gray-400">
+                总组数: <span id="total-groups">1</span> 个
+            </div>
+        </div>
+
+        <!-- 今日消息 -->
+        <div class="card p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-400">今日消息</p>
+                    <p class="text-2xl font-bold" id="messages-today">156</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-yellow-500 bg-opacity-20 flex items-center justify-center">
+                    <i class="fas fa-paper-plane text-yellow-500 text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 text-sm text-gray-400">
+                成功率: <span id="success-rate" class="text-green-400">98.5%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表区域 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 消息统计图表 -->
+        <div class="card p-6">
+            <h3 class="text-lg font-semibold mb-4">消息统计 (24小时)</h3>
+            <div class="h-64">
+                <canvas id="messageChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 成功率图表 -->
+        <div class="card p-6">
+            <h3 class="text-lg font-semibold mb-4">成功率趋势</h3>
+            <div class="h-64">
+                <canvas id="successChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- 搬运组状态 -->
+    <div class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">搬运组状态</h3>
+            <a href="/groups" class="text-blue-400 hover:text-blue-300 text-sm">
+                查看全部 <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-gray-600">
+                        <th class="text-left py-3 px-2">组名</th>
+                        <th class="text-left py-3 px-2">状态</th>
+                        <th class="text-left py-3 px-2">源频道</th>
+                        <th class="text-left py-3 px-2">目标频道</th>
+                        <th class="text-left py-3 px-2">今日消息</th>
+                        <th class="text-left py-3 px-2">成功率</th>
+                        <th class="text-left py-3 px-2">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="groups-table">
+                    <!-- 动态加载 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 系统资源 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- CPU使用率 -->
+        <div class="card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="font-semibold">CPU使用率</h4>
+                <span id="cpu-usage" class="text-2xl font-bold">12.5%</span>
+            </div>
+            <div class="w-full bg-gray-600 rounded-full h-2">
+                <div id="cpu-bar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 12.5%"></div>
+            </div>
+        </div>
+
+        <!-- 内存使用率 -->
+        <div class="card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="font-semibold">内存使用</h4>
+                <span id="memory-usage" class="text-2xl font-bold">85.2MB</span>
+            </div>
+            <div class="w-full bg-gray-600 rounded-full h-2">
+                <div id="memory-bar" class="bg-green-500 h-2 rounded-full transition-all duration-300" style="width: 35%"></div>
+            </div>
+        </div>
+
+        <!-- 存储使用 -->
+        <div class="card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="font-semibold">存储使用</h4>
+                <span id="disk-usage" class="text-2xl font-bold">2.3GB</span>
+            </div>
+            <div class="w-full bg-gray-600 rounded-full h-2">
+                <div id="disk-bar" class="bg-yellow-500 h-2 rounded-full transition-all duration-300" style="width: 45%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近活动 -->
+    <div class="card p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">最近活动</h3>
+            <a href="/logs" class="text-blue-400 hover:text-blue-300 text-sm">
+                查看日志 <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+        
+        <div class="space-y-3" id="recent-activities">
+            <!-- 动态加载 -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 消息统计图表
+const messageChart = new Chart(document.getElementById('messageChart'), {
+    type: 'line',
+    data: {
+        labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+        datasets: [{
+            label: '消息数量',
+            data: [5, 8, 12, 15, 10, 7, 9, 14, 18, 22, 25, 20, 16, 19, 23, 28, 24, 21, 18, 15, 12, 8, 6, 4],
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: 'rgba(255, 255, 255, 0.7)'
+                }
+            },
+            x: {
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                },
+                ticks: {
+                    color: 'rgba(255, 255, 255, 0.7)'
+                }
+            }
+        }
+    }
+});
+
+// 成功率图表
+const successChart = new Chart(document.getElementById('successChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['成功', '失败'],
+        datasets: [{
+            data: [98.5, 1.5],
+            backgroundColor: [
+                'rgb(34, 197, 94)',
+                'rgb(239, 68, 68)'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    padding: 20
+                }
+            }
+        }
+    }
+});
+
+// 加载搬运组数据
+async function loadGroups() {
+    try {
+        const data = await apiRequest('/api/groups');
+        const tbody = document.getElementById('groups-table');
+        
+        tbody.innerHTML = data.map(group => `
+            <tr class="border-b border-gray-700 hover:bg-gray-700 hover:bg-opacity-50">
+                <td class="py-3 px-2">
+                    <div class="font-medium">${group.name}</div>
+                    <div class="text-sm text-gray-400">${group.description || ''}</div>
+                </td>
+                <td class="py-3 px-2">
+                    <span class="px-2 py-1 rounded-full text-xs ${group.status === 'active' ? 'bg-green-500 bg-opacity-20 text-green-400' : 'bg-red-500 bg-opacity-20 text-red-400'}">
+                        ${group.status === 'active' ? '运行中' : '已停止'}
+                    </span>
+                </td>
+                <td class="py-3 px-2">${group.source_count}</td>
+                <td class="py-3 px-2">${group.target_count}</td>
+                <td class="py-3 px-2">${group.messages_today}</td>
+                <td class="py-3 px-2">
+                    <span class="text-green-400">${group.success_rate}%</span>
+                </td>
+                <td class="py-3 px-2">
+                    <a href="/groups" class="text-blue-400 hover:text-blue-300 text-sm">
+                        <i class="fas fa-edit mr-1"></i>管理
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        console.error('加载搬运组失败:', error);
+    }
+}
+
+// 加载最近活动
+function loadRecentActivities() {
+    const activities = [
+        { time: '2分钟前', type: 'success', message: '消息转发成功: 新闻组 → 我的频道' },
+        { time: '5分钟前', type: 'info', message: '账号 +86138****0000 重新连接' },
+        { time: '8分钟前', type: 'success', message: '消息转发成功: 新闻组 → 我的频道' },
+        { time: '12分钟前', type: 'warning', message: '检测到广告内容，已自动过滤' },
+        { time: '15分钟前', type: 'success', message: '消息转发成功: 新闻组 → 我的频道' }
+    ];
+    
+    const container = document.getElementById('recent-activities');
+    container.innerHTML = activities.map(activity => `
+        <div class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-700 hover:bg-opacity-50">
+            <div class="flex-shrink-0">
+                <i class="fas fa-${activity.type === 'success' ? 'check-circle text-green-400' : 
+                                activity.type === 'warning' ? 'exclamation-triangle text-yellow-400' : 
+                                'info-circle text-blue-400'}"></i>
+            </div>
+            <div class="flex-1">
+                <p class="text-sm">${activity.message}</p>
+                <p class="text-xs text-gray-400">${activity.time}</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+// 更新仪表板数据
+function updateDashboard(data) {
+    if (data.system) {
+        document.getElementById('uptime').textContent = data.system.uptime || '2小时30分钟';
+    }
+    
+    if (data.accounts) {
+        document.getElementById('active-accounts').textContent = data.accounts.active || 2;
+        document.getElementById('total-accounts').textContent = data.accounts.total || 2;
+    }
+    
+    if (data.groups) {
+        document.getElementById('active-groups').textContent = data.groups.active || 1;
+        document.getElementById('total-groups').textContent = data.groups.total || 1;
+    }
+    
+    if (data.stats) {
+        document.getElementById('messages-today').textContent = data.stats.messages_today || 156;
+        document.getElementById('success-rate').textContent = (data.stats.success_rate || 98.5) + '%';
+    }
+}
+
+// 页面加载完成后执行
+document.addEventListener('DOMContentLoaded', function() {
+    loadGroups();
+    loadRecentActivities();
+    
+    // 定期更新数据
+    setInterval(() => {
+        loadGroups();
+    }, 30000); // 30秒更新一次
+});
+</script>
+{% endblock %}

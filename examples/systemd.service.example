@@ -1,0 +1,28 @@
+[Unit]
+Description=Telegram Channel Forwarder
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+User=ubuntu
+WorkingDirectory=/path/to/telegram-forwarder
+Environment=PATH=/path/to/telegram-forwarder/venv/bin
+ExecStart=/path/to/telegram-forwarder/venv/bin/python /path/to/telegram-forwarder/main.py
+StandardOutput=append:/path/to/telegram-forwarder/logs/service.log
+StandardError=append:/path/to/telegram-forwarder/logs/service_error.log
+
+# 资源限制
+MemoryMax=1G
+TasksMax=100
+
+# 安全设置
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/path/to/telegram-forwarder
+
+[Install]
+WantedBy=multi-user.target
