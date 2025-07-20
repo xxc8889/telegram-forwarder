@@ -1,5 +1,5 @@
 """
-用户状态管理
+用户状态管理 - 简化版，主要用于Web登录
 """
 
 from enum import Enum
@@ -9,20 +9,7 @@ from typing import Dict, Any
 class UserState(Enum):
     """用户状态枚举"""
     NORMAL = "normal"
-    WAITING_PHONE = "waiting_phone"
-    WAITING_CODE = "waiting_code"
-    WAITING_2FA = "waiting_2fa"
-    WAITING_RESTART_CONFIRM = "waiting_restart_confirm"
-
-
-class LoginState(Enum):
-    """登录状态枚举"""
-    IDLE = "idle"
-    PHONE_SENT = "phone_sent"
-    CODE_SENT = "code_sent"
-    NEED_2FA = "need_2fa"
-    COMPLETED = "completed"
-    FAILED = "failed"
+    WEB_LOGIN_PENDING = "web_login_pending"
 
 
 class StateManager:
