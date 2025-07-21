@@ -1,5 +1,5 @@
 """
-Web管理界面 - Flask应用主文件 (增强版)
+Web管理界面 - Flask应用主文件 (完整版)
 """
 
 import os
@@ -7,10 +7,11 @@ import json
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash, send_file
 from flask_socketio import SocketIO, emit
 import secrets
 import time
+import tempfile
 
 # 导入项目模块
 import sys
@@ -18,7 +19,7 @@ sys.path.append('..')
 from config.settings import Settings
 from config.database import Database
 from web.auth import AuthManager
-from utils.logger import get_recent_logs, get_log_stats
+from utils.logger import get_recent_logs, get_log_stats, filter_logs_by_level
 
 
 class WebApp:
@@ -166,6 +167,7 @@ class WebApp:
     def _register_api_routes(self):
         """注册API路由"""
         
+        # 系统状态API
         @self.app.route('/api/status')
         def api_status():
             """获取系统状态"""
@@ -184,6 +186,7 @@ class WebApp:
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
 
+        # 搬运组管理API
         @self.app.route('/api/groups')
         def api_groups():
             """获取搬运组列表"""
@@ -282,6 +285,75 @@ class WebApp:
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
 
+        # 频道管理API
+        @self.app.route('/api/groups/<int:group_id>/channels', methods=['POST'])
+        def api_add_channel(group_id):
+            """添加频道到组"""
+            if not self._is_authenticated():
+                return jsonify({'error': 'Unauthorized'}), 401
+            
+            try:
+                data = request.get_json()
+                channel_type = data['type']  # 'source' 或 'target'
+                channel = data['channel']
+                
+                from core.manager import ForwarderManager
+                
+                if ForwarderManager.instance:
+                    if channel_type == 'source':
+                        result = asyncio.run(ForwarderManager.instance.group_processor.add_source_channel(
+                            group_id, channel
+                        ))
+                    else:
+                        result = asyncio.run(ForwarderManager.instance.group_processor.add_target_channel(
+                            group_id, channel
+                        ))
+                    return jsonify(result)
+                else:
+                    return jsonify({'error': 'System not initialized'}), 500
+                    
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/groups/<int:group_id>/channels/<int:channel_id>', methods=['DELETE'])
+        def api_remove_channel(group_id, channel_id):
+            """从组中删除频道"""
+            if not self._is_authenticated():
+                return jsonify({'error': 'Unauthorized'}), 401
+            
+            try:
+                from core.manager import ForwarderManager
+                
+                if ForwarderManager.instance:
+                    result = asyncio.run(ForwarderManager.instance.group_processor.remove_channel(
+                        group_id, channel_id
+                    ))
+                    return jsonify(result)
+                else:
+                    return jsonify({'error': 'System not initialized'}), 500
+                    
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/groups/<int:group_id>/toggle', methods=['POST'])
+        def api_toggle_group(group_id):
+            """切换组状态"""
+            if not self._is_authenticated():
+                return jsonify({'error': 'Unauthorized'}), 401
+            
+            try:
+                from core.manager import ForwarderManager
+                
+                if ForwarderManager.instance:
+                    result = asyncio.run(ForwarderManager.instance.toggle_group_status(group_id))
+                    return jsonify(result)
+                else:
+                    return jsonify({'error': 'System not initialized'}), 500
+                    
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
+        # 账号管理API
         @self.app.route('/api/accounts')
         def api_accounts():
             """获取账号列表"""
@@ -339,6 +411,52 @@ class WebApp:
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
 
+        @self.app.route('/api/accounts/<path:phone>/reconnect', methods=['POST'])
+        def api_reconnect_account(phone):
+            """重连账号"""
+            if not self._is_authenticated():
+                return jsonify({'error': 'Unauthorized'}), 401
+            
+            try:
+                from core.manager import ForwarderManager
+                
+                if ForwarderManager.instance:
+                    result = asyncio.run(ForwarderManager.instance.reconnect_account(phone))
+                    return jsonify(result)
+                else:
+                    return jsonify({'error': 'System not initialized'}), 500
+                    
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/accounts/login-guide', methods=['POST'])
+        def api_account_login_guide():
+            """账号登录引导"""
+            if not self._is_authenticated():
+                return jsonify({'error': 'Unauthorized'}), 401
+            
+            try:
+                data = request.get_json()
+                phone = data.get('phone')
+                
+                # 生成添加账号的指导信息
+                bot_command = f"/add_listener {phone}"
+                
+                return jsonify({
+                    'status': 'success',
+                    'bot_command': bot_command,
+                    'instructions': [
+                        f"1. 在Bot中发送: {bot_command}",
+                        "2. 输入收到的验证码",
+                        "3. 如需要，输入两步验证密码",
+                        "4. 等待账号添加完成"
+                    ]
+                })
+                
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
+        # API池管理API
         @self.app.route('/api/api-pool')
         def api_api_pool():
             """获取API池状态"""
@@ -398,6 +516,7 @@ class WebApp:
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
 
+        # 日志管理API
         @self.app.route('/api/logs')
         def api_logs():
             """获取系统日志"""
@@ -414,11 +533,97 @@ class WebApp:
                     result = asyncio.run(ForwarderManager.instance.get_logs(level, lines))
                     return jsonify(result)
                 else:
-                    return jsonify({'logs': [], 'stats': {}})
+                    # 直接使用日志工具
+                    if level == 'ALL':
+                        logs = get_recent_logs(lines=lines)
+                    else:
+                        logs = filter_logs_by_level(level=level, lines=lines)
+                    
+                    stats = get_log_stats()
+                    return jsonify({'logs': logs, 'stats': stats})
                     
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
 
+        @self.app.route('/api/logs/search')
+        def api_search_logs():
+            """搜索日志"""
+            if not self._is_authenticated():
+                return jsonify({'error': 'Unauthorized'}), 401
+            
+            try:
+                query = request.args.get('query', '')
+                level = request.args.get('level', 'ALL')
+                lines = request.args.get('lines', 50, type=int)
+                
+                if level == 'ALL':
+                    logs = get_recent_logs(lines=lines)
+                else:
+                    logs = filter_logs_by_level(level=level, lines=lines)
+                
+                # 过滤包含查询词的日志
+                if query:
+                    logs = [log for log in logs if query.lower() in log.lower()]
+                
+                return jsonify({'logs': logs})
+                
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/logs/clear', methods=['DELETE'])
+        def api_clear_logs():
+            """清空日志"""
+            if not self._is_authenticated():
+                return jsonify({'error': 'Unauthorized'}), 401
+            
+            try:
+                # 清空日志文件
+                log_file = self.settings.log_file
+                if os.path.exists(log_file):
+                    with open(log_file, 'w') as f:
+                        f.write('')
+                
+                return jsonify({'status': 'success', 'message': '日志已清空'})
+                
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/logs/download')
+        def api_download_logs():
+            """下载日志文件"""
+            if not self._is_authenticated():
+                return jsonify({'error': 'Unauthorized'}), 401
+            
+            try:
+                log_file = self.settings.log_file
+                if os.path.exists(log_file):
+                    return send_file(log_file, as_attachment=True, 
+                                   download_name=f'telegram-forwarder-{datetime.now().strftime("%Y%m%d")}.log')
+                else:
+                    return jsonify({'error': 'Log file not found'}), 404
+                    
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/logs/cleanup', methods=['POST'])
+        def api_cleanup_logs():
+            """清理日志"""
+            if not self._is_authenticated():
+                return jsonify({'error': 'Unauthorized'}), 401
+            
+            try:
+                from core.manager import ForwarderManager
+                
+                if ForwarderManager.instance:
+                    result = asyncio.run(ForwarderManager.instance.cleanup_logs())
+                    return jsonify(result)
+                else:
+                    return jsonify({'status': 'success', 'message': '日志清理完成'})
+                    
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
+        # 设置管理API
         @self.app.route('/api/settings')
         def api_get_settings():
             """获取系统设置"""
@@ -461,11 +666,49 @@ class WebApp:
                     result = asyncio.run(ForwarderManager.instance.update_settings(section, data))
                     return jsonify(result)
                 else:
-                    return jsonify({'error': 'System not initialized'}), 500
+                    # 直接更新设置
+                    for key, value in data.items():
+                        self.settings.set(f'{section}.{key}', value)
+                    
+                    return jsonify({'status': 'success', 'message': '设置更新成功'})
                     
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
 
+        # 测试过滤器API
+        @self.app.route('/api/test-filter', methods=['POST'])
+        def api_test_filter():
+            """测试过滤器"""
+            if not self._is_authenticated():
+                return jsonify({'error': 'Unauthorized'}), 401
+            
+            try:
+                data = request.get_json()
+                text = data['text']
+                filters = data['filters']
+                
+                # 使用MessageFilter测试
+                from utils.filters import MessageFilter
+                message_filter = MessageFilter(self.settings)
+                
+                # 更新关键词
+                if 'ad_keywords' in filters:
+                    message_filter.update_ad_keywords(filters['ad_keywords'])
+                
+                # 应用过滤器
+                filtered_text = message_filter.filter_text(text, filters)
+                
+                return jsonify({
+                    'original': text,
+                    'filtered': filtered_text,
+                    'removed_count': len(text) - len(filtered_text),
+                    'stats': message_filter.get_filter_stats(text)
+                })
+                
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
+        # 系统信息API
         @self.app.route('/api/system-info')
         def api_system_info():
             """获取系统信息"""
@@ -479,7 +722,41 @@ class WebApp:
                     info = asyncio.run(ForwarderManager.instance.get_system_info())
                     return jsonify(info)
                 else:
-                    return jsonify({'error': 'System not initialized'}), 500
+                    import psutil
+                    import platform
+                    
+                    return jsonify({
+                        'system': {
+                            'platform': platform.system(),
+                            'release': platform.release(),
+                            'python_version': platform.python_version(),
+                            'architecture': platform.machine()
+                        },
+                        'resources': {
+                            'cpu_percent': psutil.cpu_percent(),
+                            'memory_percent': psutil.virtual_memory().percent,
+                            'disk_percent': psutil.disk_usage('.').percent
+                        }
+                    })
+                    
+            except Exception as e:
+                return jsonify({'error': str(e)}), 500
+
+        # 系统控制API
+        @self.app.route('/api/system/restart', methods=['POST'])
+        def api_restart_system():
+            """重启系统"""
+            if not self._is_authenticated():
+                return jsonify({'error': 'Unauthorized'}), 401
+            
+            try:
+                from core.manager import ForwarderManager
+                
+                if ForwarderManager.instance:
+                    result = asyncio.run(ForwarderManager.instance.restart_system())
+                    return jsonify(result)
+                else:
+                    return jsonify({'status': 'success', 'message': '系统重启请求已提交'})
                     
             except Exception as e:
                 return jsonify({'error': str(e)}), 500
