@@ -29,7 +29,7 @@ def setup_handlers(app: Application, settings, database, account_manager,
     ))
     
     # 设置Bot菜单
-    setup_bot_menu(app)
+    await setup_bot_menu(app)
 
 
 async def setup_bot_menu(app: Application):
